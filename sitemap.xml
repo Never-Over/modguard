@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://never-over.github.io/modguard/</loc>
+         <lastmod>2024-02-23</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://never-over.github.io/modguard/api/</loc>
+         <lastmod>2024-02-23</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://never-over.github.io/modguard/faq/</loc>
+         <lastmod>2024-02-23</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://never-over.github.io/modguard/getting-started/</loc>
+         <lastmod>2024-02-23</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://never-over.github.io/modguard/usage/</loc>
+         <lastmod>2024-02-23</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://never-over.github.io/modguard/why-modguard/</loc>
+         <lastmod>2024-02-23</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+</urlset>
