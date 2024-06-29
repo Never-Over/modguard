@@ -1,0 +1,66 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Tach Project Configuration Schema",
+    "type": "object",
+    "properties": {
+        "modules": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "path": {
+                        "type": "string",
+                        "description": "Path to the module"
+                    },
+                    "depends_on": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "default": [],
+                        "description": "List of dependencies for the module"
+                    },
+                    "strict": {
+                        "type": "boolean",
+                        "default": false,
+                        "description": "Strict mode for the module"
+                    }
+                },
+                "required": [
+                    "path"
+                ]
+            },
+            "default": [],
+            "description": "List of module configurations"
+        },
+        "exclude": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "List of paths to exclude while checking module boundaries"
+        },
+        "source_root": {
+            "type": "string",
+            "description": "Root directory for Python source code"
+        },
+        "exact": {
+            "type": "boolean",
+            "default": false,
+            "description": "Check that module configuration exactly matches real dependencies"
+        },
+        "disable_logging": {
+            "type": "boolean",
+            "default": false,
+            "description": "Disable anonymized usage logging"
+        },
+        "ignore_type_checking_imports": {
+            "type": "boolean",
+            "default": true,
+            "description": "Ignore type-checking imports when checking module boundaries"
+        }
+    },
+    "required": [
+        "modules"
+    ]
+}
