@@ -14,8 +14,6 @@ modules:
     strict: true
   - path: tach.check
     depends_on:
-      - tach.constants
-      - tach.core
       - tach.errors
       - tach.filesystem
       - tach.parsing
@@ -36,6 +34,7 @@ modules:
       - tach.report
       - tach.show
       - tach.sync
+      - tach.test
     strict: true
   - path: tach.colors
     depends_on: []
@@ -54,8 +53,13 @@ modules:
     depends_on:
       - tach.colors
       - tach.constants
+      - tach.core
       - tach.errors
       - tach.hooks
+    strict: true
+  - path: tach.filesystem.git_ops
+    depends_on:
+      - tach.errors
     strict: true
   - path: tach.hooks
     depends_on:
@@ -105,6 +109,17 @@ modules:
       - tach.filesystem
       - tach.parsing
     strict: true
+  - path: tach.test
+    depends_on:
+      - tach.errors
+      - tach.filesystem
+      - tach.filesystem.git_ops
+      - tach.parsing
+    strict: true
+cache:
+  file_dependencies:
+    - python/tests/**
+    - src/*.rs
 exclude:
   - .*__pycache__
   - build/

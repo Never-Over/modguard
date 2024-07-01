@@ -3,10 +3,11 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import IO, TYPE_CHECKING, Any
 
 from tach import __version__, cache
 from tach import filesystem as fs
@@ -15,6 +16,11 @@ from tach.colors import BCOLORS
 from tach.constants import CONFIG_FILE_NAME, TOOL_NAME
 from tach.core import ProjectConfig
 from tach.errors import TachError
+from tach.extension import (
+    check_computation_cache,
+    create_computation_cache_key,
+    update_computation_cache,
+)
 from tach.filesystem import install_pre_commit
 from tach.logging import LogDataModel, logger
 from tach.mod import mod_edit_interactive
@@ -22,6 +28,7 @@ from tach.parsing import parse_project_config
 from tach.report import report
 from tach.show import generate_show_url
 from tach.sync import prune_dependency_constraints, sync_project
+from tach.test import run_affected_tests
 
 if TYPE_CHECKING:
     from tach.core import UnusedDependencies
@@ -223,6 +230,37 @@ def build_parser() -> argparse.ArgumentParser:
         help="What kind of installation to perform (e.g. pre-commit)",
     )
     add_base_arguments(report_parser)
+    test_parser = subparsers.add_parser(
+        "test",
+        prog="tach test",
+        help="Run tests on modules impacted by the current changes.",
+        description="Run tests on modules impacted by the current changes.",
+    )
+    test_parser.add_argument(
+        "--base",
+        type=str,
+        nargs="?",
+        default="main",
+        help="The base commit to use when determining which modules are impacted by changes. [default: 'main']",
+    )
+
+    test_parser.add_argument(
+        "--head",
+        type=str,
+        nargs="?",
+        default="",
+        help="The head commit to use when determining which modules are impacted by changes. [default: current filesystem]",
+    )
+    test_parser.add_argument(
+        "--disable-cache",
+        action="store_true",
+        help="Do not check cache for results, and do not push results to cache.",
+    )
+    test_parser.add_argument(
+        "pytest_args",
+        nargs=argparse.REMAINDER,
+        help="Arguments forwarded to pytest. Use '--' to separate these arguments. Ex: 'tach test -- -v'",
+    )
     return parser
 
 
@@ -232,6 +270,84 @@ def parse_arguments(
     parser = build_parser()
     parsed_args = parser.parse_args(args)
     return parsed_args, parser
+
+
+@dataclass
+class CachedOutput:
+    key: str
+    output: list[tuple[int, str]] = field(default_factory=list)
+    exit_code: int | None = None
+
+    @property
+    def exists(self) -> bool:
+        return self.exit_code is not None
+
+    def replay(self):
+        for fd, output in self.output:
+            if fd == 1:
+                print(output, end="", file=sys.stdout)
+            elif fd == 2:
+                print(output, end="", file=sys.stderr)
+
+
+def check_cache_for_action(
+    project_root: Path, project_config: ProjectConfig, action: str
+) -> CachedOutput:
+    cache_key = create_computation_cache_key(
+        project_root=str(project_root),
+        source_root=str(project_config.source_root),
+        action=action,
+        py_interpreter_version=f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}",
+        file_dependencies=project_config.cache.file_dependencies,
+        env_dependencies=project_config.cache.env_dependencies,
+        backend=project_config.cache.backend,
+    )
+    cache_result = check_computation_cache(
+        project_root=str(project_root), cache_key=cache_key
+    )
+    if cache_result:
+        return CachedOutput(
+            key=cache_key,
+            output=cache_result[0],
+            exit_code=cache_result[1],
+        )
+    return CachedOutput(key=cache_key)
+
+
+class TeeStream:
+    def __init__(self, fd: int, source_stream: IO[Any], capture: list[tuple[int, str]]):
+        self.fd = fd
+        self.source_stream = source_stream
+        self.capture = capture
+
+    def write(self, data: Any):
+        self.source_stream.write(data)
+        self.capture.append((self.fd, data))
+
+    def __getattr__(self, name: str) -> Any:
+        # Hack: Proxy attribute access to the source stream
+        return getattr(self.source_stream, name)
+
+
+class Tee:
+    def __init__(self):
+        # stdout output will be indicated by (1, <data>), stderr output by (2, <data>)
+        self.output_capture: list[tuple[int, str]] = []
+        self.original_stdout: Any = None
+        self.original_stderr: Any = None
+
+    def __enter__(self):
+        self.original_stdout = sys.stdout
+        self.original_stderr = sys.stderr
+
+        sys.stdout = TeeStream(1, sys.stdout, self.output_capture)
+        sys.stderr = TeeStream(2, sys.stderr, self.output_capture)
+
+        return self
+
+    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any):
+        sys.stdout = self.original_stdout
+        sys.stderr = self.original_stderr
 
 
 def tach_check(
@@ -438,10 +554,12 @@ def tach_show(project_root: Path):
             ),
         },
     )
+
     project_config = parse_project_config(root=project_root)
     if project_config is None:
         print_no_config_yml()
         sys.exit(1)
+
     try:
         result = generate_show_url(project_config)
         if result:
@@ -452,6 +570,80 @@ def tach_show(project_root: Path):
             sys.exit(1)
     except TachError as e:
         print(f"Show failed: {e}")
+        sys.exit(1)
+
+
+def tach_test(
+    project_root: Path,
+    head: str,
+    base: str,
+    disable_cache: bool,
+    pytest_args: list[Any],
+):
+    logger.info(
+        "tach test called",
+        extra={
+            "data": LogDataModel(
+                function="tach_test",
+            ),
+        },
+    )
+    project_config = parse_project_config(root=project_root)
+    if project_config is None:
+        print_no_config_yml()
+        sys.exit(1)
+
+    if pytest_args and pytest_args[0] != "--":
+        print(
+            f"{BCOLORS.FAIL}Unknown arguments received. Use '--' to separate arguments for pytest. Ex: 'tach test -- -v'{BCOLORS.ENDC}"
+        )
+        sys.exit(1)
+
+    try:
+        if disable_cache:
+            # If cache disabled, just run affected tests and exit
+            exit_code = run_affected_tests(
+                project_root=project_root,
+                project_config=project_config,
+                head=head,
+                base=base,
+                pytest_args=pytest_args[1:],  # Remove '--' pseudo-argument
+            )
+            sys.exit(exit_code)
+
+        cached_output = check_cache_for_action(
+            project_root, project_config, f"tach-test,{head},{base},{pytest_args}"
+        )
+        if cached_output.exists:
+            # Early exit, cached terminal output was found
+            print(
+                f"{BCOLORS.OKGREEN}============ Cached results found!  ============{BCOLORS.ENDC}"
+            )
+            cached_output.replay()
+            print(
+                f"{BCOLORS.OKGREEN}============ END Cached results  ============{BCOLORS.ENDC}"
+            )
+            sys.exit(cached_output.exit_code)
+
+        # Cache missed, capture terminal output while tests run so we can update the cache
+
+        with Tee() as captured:
+            exit_code = run_affected_tests(
+                project_root=project_root,
+                project_config=project_config,
+                head=head,
+                base=base,
+                pytest_args=pytest_args[1:],  # Remove '--' pseudo-argument
+            )
+
+        update_computation_cache(
+            str(project_root),
+            cache_key=cached_output.key,
+            value=(captured.output_capture, exit_code),
+        )
+        sys.exit(exit_code)
+    except TachError as e:
+        print(f"{BCOLORS.FAIL}Report failed: {e}{BCOLORS.ENDC}")
         sys.exit(1)
 
 
@@ -491,6 +683,14 @@ def main() -> None:
     elif args.command == "report":
         tach_report(
             project_root=project_root, path=args.path, exclude_paths=exclude_paths
+        )
+    elif args.command == "test":
+        tach_test(
+            project_root=project_root,
+            head=args.head,
+            base=args.base,
+            disable_cache=args.disable_cache,
+            pytest_args=args.pytest_args,
         )
     elif args.command == "show":
         tach_show(project_root=project_root)

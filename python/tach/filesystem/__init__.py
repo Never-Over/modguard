@@ -3,6 +3,7 @@ from __future__ import annotations
 from tach.filesystem.install import install_pre_commit
 from tach.filesystem.project import find_project_config_root, get_project_config_path
 from tach.filesystem.service import (
+    ProjectModuleValidationResult,
     canonical,
     chdir,
     delete_file,
@@ -12,6 +13,7 @@ from tach.filesystem.service import (
     module_to_pyfile_or_dir_path,
     parse_ast,
     read_file,
+    validate_project_modules,
     walk,
     walk_pyfiles,
     write_file,
@@ -33,4 +35,6 @@ __all__ = [
     "get_project_config_path",
     "find_project_config_root",
     "install_pre_commit",
+    "validate_project_modules",
+    "ProjectModuleValidationResult",
 ]

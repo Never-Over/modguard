@@ -7,8 +7,6 @@ from typing import TYPE_CHECKING
 
 from tach import errors
 from tach import filesystem as fs
-from tach.constants import ROOT_MODULE_SENTINEL_TAG
-from tach.core import ModuleConfig
 from tach.extension import get_project_imports, set_excluded_paths
 from tach.parsing import build_module_tree
 
@@ -126,27 +124,6 @@ class CheckResult:
     warnings: list[str] = field(default_factory=list)
 
 
-@dataclass
-class ProjectModuleValidationResult:
-    valid_modules: list[ModuleConfig] = field(default_factory=list)
-    invalid_modules: list[ModuleConfig] = field(default_factory=list)
-
-
-def validate_project_modules(
-    source_root: Path,
-    modules: list[ModuleConfig],
-) -> ProjectModuleValidationResult:
-    result = ProjectModuleValidationResult()
-    for module in modules:
-        if module.path == ROOT_MODULE_SENTINEL_TAG or fs.module_to_pyfile_or_dir_path(
-            source_root=source_root, module_path=module.path
-        ):
-            result.valid_modules.append(module)
-        else:
-            result.invalid_modules.append(module)
-    return result
-
-
 def is_path_excluded(path: Path, exclude_paths: list[str]) -> bool:
     dirpath_for_matching = f"{path}/"
     return any(
@@ -174,7 +151,7 @@ def check(
 
     source_root = project_root / project_config.source_root
 
-    module_validation_result = validate_project_modules(
+    module_validation_result = fs.validate_project_modules(
         source_root=source_root, modules=project_config.modules
     )
     warnings.extend(

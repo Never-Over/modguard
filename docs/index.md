@@ -26,4 +26,5 @@ Tach is:
 * [`tach sync`](usage.md#tach-sync) - Sync constraints with the actual dependencies in your project.
 * [`tach show`](usage.md#tach-show) - Visualize your project's dependency graph.
 * [`tach report`](usage.md#tach-report) - Generate a dependency report for a file or module.
+* [`tach test`](usage.md#tach-test) - Run only the tests impacted by your changes
 * [`tach install`](usage.md#tach-install) - Install Tach into your development workflow (e.g. pre-commit)

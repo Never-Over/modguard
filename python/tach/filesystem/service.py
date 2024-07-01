@@ -5,14 +5,16 @@ import os
 import stat
 import threading
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
 from typing import Generator
 
 from tach import errors
+from tach import filesystem as fs
 from tach.colors import BCOLORS
 from tach.constants import ROOT_MODULE_SENTINEL_TAG
+from tach.core import ModuleConfig
 
 
 @dataclass
@@ -250,3 +252,24 @@ def module_to_pyfile_or_dir_path(source_root: Path, module_path: str) -> Path | 
         return dir_path
 
     return None
+
+
+@dataclass
+class ProjectModuleValidationResult:
+    valid_modules: list[ModuleConfig] = field(default_factory=list)
+    invalid_modules: list[ModuleConfig] = field(default_factory=list)
+
+
+def validate_project_modules(
+    source_root: Path,
+    modules: list[ModuleConfig],
+) -> ProjectModuleValidationResult:
+    result = ProjectModuleValidationResult()
+    for module in modules:
+        if module.path == ROOT_MODULE_SENTINEL_TAG or fs.module_to_pyfile_or_dir_path(
+            source_root=source_root, module_path=module.path
+        ):
+            result.valid_modules.append(module)
+        else:
+            result.invalid_modules.append(module)
+    return result

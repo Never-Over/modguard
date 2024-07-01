@@ -15,28 +15,41 @@ This is the project-level configuration file which should be in the root of your
 
 ```yaml
 modules:
-- path: tach
-  depends_on: []
-  strict: true
-- path: tach.cache
-  depends_on:
-  - tach.filesystem
-  strict: true
-- path: tach.filesystem
-  depends_on: []
-  strict: true
+  - path: tach
+    depends_on: []
+    strict: true
+  - path: tach.cache
+    depends_on:
+      - tach.filesystem
+    strict: true
+  - path: tach.filesystem
+    depends_on: []
+    strict: true
 exclude:
-- .*__pycache__/
-- build/
-- dist/
-- docs/
-- tach.egg-info/
-- tests/
+  - .*__pycache__/
+  - build/
+  - dist/
+  - docs/
+  - tach.egg-info/
+  - tests/
+cache:
+  file_dependencies:
+    - python/tests/**
+    - src/*.rs
+  env_dependencies:
+    - DEBUG
 source_root: backend
 exact: true
 disable_logging: false
 ignore_type_checking_imports: true
 ```
+
+## Modules
+Each module listed under the `modules` key above can accept the following attributes:
+
+- `path`: the Python import path to the module (e.g. `a.b` for `<root>/a/b.py`)
+- `depends_on`: a list of the other modules which the module is allowed to import from, using their 'paths' to identify them
+- `strict`: enables [strict mode](strict-mode.md) for the module
 
 ## Source Root
 The `source_root` key is required for Tach to understand the imports within your project.
@@ -76,9 +89,11 @@ To indicate this structure to Tach, set `source_root: backend` in your `tach.yml
 
 In `tach.yml`, the `source_root` is always interpreted as a relative path from the project root.
 
-## Modules
-Each module listed under the `modules` key above can accept the following attributes:
 
-- `path`: the Python import path to the module (e.g. `a.b` for `<root>/a/b.py`)
-- `depends_on`: a list of the other modules which the module is allowed to import from, using their 'paths' to identify them
-- `strict`: enables [strict mode](strict-mode.md) for the module
+## Cache
+
+Tach allows configuration of the [computation cache](caching.md) it uses to speed up tasks like [testing](usage.md#tach-test).
+
+The `file_dependencies` key accepts a list of glob patterns to indicate additional file contents that should be considered when [checking for cache hits](caching.md#determining-cache-hits). This should typically include files outside of your [source root](#source-root) which affect your project's behavior under test, including the tests themselves. Additionally, if you have non-Python files which affect your project's behavior (such as Rust or C extensions), these should be included as well.
+
+The `env_dependencies` key accepts a list of environment variable names whose values affect your project's behavior under test. This may include a `DEBUG` flag, or database connection parameters in the case of tests which use a configurable database.

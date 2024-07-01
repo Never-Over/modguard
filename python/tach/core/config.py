@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from pydantic import AfterValidator, BaseModel, Field, field_serializer
-from typing_extensions import Annotated
+from typing_extensions import Annotated, Literal
 
 from tach.constants import DEFAULT_EXCLUDE_PATHS, ROOT_MODULE_SENTINEL_TAG
 
@@ -51,6 +51,18 @@ class UnusedDependencies:
     dependencies: list[str]
 
 
+class CacheConfig(Config):
+    """
+    Configuration affecting Tach's caching.
+
+    Responsible for configuring the cache backend, and adjusting the dependencies which should affect cache retrieval.
+    """
+
+    backend: Literal["local"] = "local"
+    file_dependencies: list[str] = Field(default_factory=list)
+    env_dependencies: list[str] = Field(default_factory=list)
+
+
 class ProjectConfig(Config):
     """
     Central configuration object for a project using Tach.
@@ -59,6 +71,7 @@ class ProjectConfig(Config):
     """
 
     modules: list[ModuleConfig] = Field(default_factory=list)
+    cache: CacheConfig = Field(default_factory=CacheConfig)
     exclude: list[str] | None = Field(
         default_factory=lambda: copy(DEFAULT_EXCLUDE_PATHS)
     )

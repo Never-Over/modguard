@@ -63,10 +63,10 @@ Dependencies that exist between each module you've marked will be written to `ta
 
 Check out what Tach has found! 
 ```
-cat tach.yml
+cat tach.yml | less
 ```
 
-Note: Your 'project root' directory (where `tach.yml` is) will be treated as a module boundary, and can show up as `<root>`.
+Note: Your [source root](https://gauge-sh.github.io/tach/configuration#source-root) directory will implicitly be treated as a module boundary, and can show up as `<root>`.
 
 ### Enforcement
 Tach comes with a cli command to enforce the boundaries that you just set up! From the root of your Python project, run:
@@ -89,7 +89,7 @@ Give both a try and run `tach check` again. This will generate an error:
 
 Each error indicates an import which violates your dependencies. If your terminal supports hyperlinks, click on the file path to go directly to the error.
 
-`tach check` will also raise an error code. It can be easily integrated with CI/CD, [Pre-commit hooks](https://gauge-sh.github.io/tach/usage/#tach-install), and [VS Code](https://marketplace.visualstudio.com/items?itemName=Gauge.tach), and more!  
+When an error is detected, `tach check` will exit with a non-zero code. It can be easily integrated with CI/CD, [Pre-commit hooks](https://gauge-sh.github.io/tach/usage/#tach-install), and [VS Code](https://marketplace.visualstudio.com/items?itemName=Gauge.tach), and more!
 
 ### Extras
 
@@ -97,11 +97,11 @@ Visualize your dependency graph.
 ```bash
 tach show
 ```
-Tach will generate a graph of your dependencies. Here's what this looks like for Tach:
+Tach will generate a graph of your dependencies. Here's what this looks like for Tach itself:
 
 ![tach show](docs/assets/tach_show.png)
 
-Note that this graph is generated remotely the contents of your `tach.yml`.
+Note that this graph is generated remotely based on the contents of your `tach.yml`.
 
 You can view the dependencies and usages for a given path:
 ```bash
@@ -131,7 +131,7 @@ Tach also supports:
 - [Pre-commit hooks](https://gauge-sh.github.io/tach/usage/#tach-install)
 
 
-More info in the [docs](https://gauge-sh.github.io/tach/). Tach logs anonymized usage statistics which are can be [opted out](https://gauge-sh.github.io/tach/faq/) of.
+More info in the [docs](https://gauge-sh.github.io/tach/). Tach logs anonymized usage statistics which can be [opted out](https://gauge-sh.github.io/tach/faq/) of.
 If you have any feedback, we'd love to talk!
 
 If you have any questions or run into any issues, let us know by either reaching out on [Discord](https://discord.gg/a58vW8dnmw) or submitting a [Github Issue](https://github.com/gauge-sh/tach/issues)!

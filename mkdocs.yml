@@ -10,6 +10,7 @@ nav:
   - usage.md
   - configuration.md
   - strict-mode.md
+  - caching.md
   - tach-ignore.md
   - vscode.md
   - faq.md

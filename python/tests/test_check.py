@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
-from tach.check import check_import, validate_project_modules
+from tach.check import check_import
 from tach.cli import tach_check
 from tach.core import (
     ModuleConfig,
@@ -14,6 +14,7 @@ from tach.core import (
     ModuleTree,
 )
 from tach.core.config import RootModuleConfig
+from tach.filesystem import validate_project_modules
 
 
 @pytest.fixture

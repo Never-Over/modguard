@@ -118,6 +118,35 @@ options:
 ![tach show](assets/tach_show.png)
 
 
+## tach test
+Tach also functions as an intelligent test runner.
+
+```
+usage: tach test [-h] [--base [BASE]] [--head [HEAD]] [--disable-cache] ...
+
+Run tests on modules impacted by the current changes.
+
+positional arguments:
+  pytest_args      Arguments forwarded to pytest. Use '--' to separate
+                   these arguments. Ex: 'tach test -- -v'
+
+options:
+  -h, --help       show this help message and exit
+  --base [BASE]    The base commit to use when determining which modules
+                   are impacted by changes. [default: 'main']
+  --head [HEAD]    The head commit to use when determining which modules
+                   are impacted by changes. [default: current filesystem]
+  --disable-cache  Do not check cache for results, and
+                   do not push results to cache.
+```
+
+Using `pytest`, running `tach test` will perform [impact analysis](https://martinfowler.com/articles/rise-test-impact-analysis.html) on the changes between your current filesystem and your `main` branch to determine which test files need to be run.
+
+This can dramatically speed up your test suite in CI, particularly when you make a small change to a large codebase.
+
+This command also takes advantage of Tach's [computation cache](caching.md).
+
+
 ## tach install
 Tach can be installed into your development workflow automatically as a pre-commit hook.
 

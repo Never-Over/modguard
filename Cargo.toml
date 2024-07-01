@@ -16,6 +16,9 @@ walkdir = "2.5.0"
 ruff_python_ast = { git = "https://github.com/astral-sh/ruff.git", tag = "v0.4.5" }
 ruff_python_parser = { git = "https://github.com/astral-sh/ruff.git", tag = "v0.4.5" }
 ruff_source_file = { git = "https://github.com/astral-sh/ruff.git", tag = "v0.4.5" }
+cached = { version = "0.51.4", features = ["disk_store"] }
+globset = "0.4.14"
+toml = "0.8.14"
 
 [features]
 extension-module = ["pyo3/extension-module"]

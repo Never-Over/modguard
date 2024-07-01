@@ -33,6 +33,35 @@
             "default": [],
             "description": "List of module configurations"
         },
+        "cache": {
+            "type": "object",
+            "properties": {
+                "backend": {
+                    "type": "string",
+                    "enum": [
+                        "local"
+                    ],
+                    "default": "local",
+                    "description": "Cache backend type (currently not configurable, 'local' only)"
+                },
+                "file_dependencies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "description": "List of file dependencies for the cache"
+                },
+                "env_dependencies": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "description": "List of environment dependencies for the cache"
+                }
+            }
+        },
         "exclude": {
             "type": "array",
             "items": {
